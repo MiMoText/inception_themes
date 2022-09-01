@@ -52,8 +52,49 @@ def load_cas(typesystem_file, xmi_file):
        cas = load_cas_from_xmi(f, typesystem=typesystem)
     return cas
 
+def get_sentences(cas):
+    '''
+    Saves sentence information including begin, end and text into a dataframe.
+    '''
+    rows = []
+    counter = 0
+    for sentence in cas.select('de.tudarmstadt.ukp.dkpro.core.api.segmentation.type.Sentence'):
+        #print(sentence.get_covered_text(), sentence.begin, sentence.end)
+        rows.append({'id' : counter, 'begin' : sentence.begin, 'end' : sentence.end, 'text' : sentence.get_covered_text()})
+        counter += 1 
+    sentence_df = pd.DataFrame(rows)
+    return sentence_df
 
-def extract_infos(cas, mapping_dict):
+def get_snippet(sentence_df, prop):
+    '''
+    Extracts the associated sentences to an annotated statement.
+    '''
+    annot_begin = min(prop.Governor.begin, prop.Dependent.begin)
+    annot_end = max(prop.Governor.end, prop.Dependent.end)
+    snippet = ""
+    first_sentence = 0
+    # get first sentence of annotation
+    for ind in sentence_df.index:
+        if annot_begin >= sentence_df['begin'][ind] and annot_begin <= sentence_df['end'][ind]:
+            snippet = snippet + sentence_df['text'][ind]
+            first_sentence = ind
+            break
+    
+    # check for more sentences
+    ind_sent = first_sentence + 1
+    if not annot_end <= sentence_df['end'][first_sentence]:   # annotation covers only one sentence
+        if annot_end <= sentence_df['end'][ind_sent]: # annotation covers two sentences
+            snippet = snippet + " " + sentence_df['text'][ind_sent]
+        else: # more than two sentences
+            while annot_end > sentence_df['end'][ind_sent]:
+                snippet = snippet + " " + sentence_df['text'][ind_sent]
+                ind_sent += 1
+                
+    return snippet
+                
+        
+        
+def extract_infos(cas, mapping_dict, sentence_df):
     '''
     Extracts statement informations from the cas object.
     Returns statements as dataframe.
@@ -72,8 +113,9 @@ def extract_infos(cas, mapping_dict):
         except:
             object_label = None
         object_snippet = prop.Dependent.get_covered_text()
+        text_snippet = get_snippet(sentence_df, prop)
+        rows.append({'subject_id' : subject_id, 'subject_snippet' : subject_snippet, 'property' : property, 'object_id' : object_id, 'object_label' : object_label, 'object_snippet' : object_snippet, 'snippet': text_snippet})
         
-        rows.append({'subject_id' : subject_id, 'subject_snippet' : subject_snippet, 'property' : property, 'object_id' : object_id, 'object_label' : object_label, 'object_snippet' : object_snippet})
     
     df = pd.DataFrame(rows)
     return df
@@ -95,7 +137,8 @@ def main(theme_file, typesystem_file, input_folder, output_folder):
         basename,ext = os.path.basename(file).split(".")
         print(basename)
         cas = load_cas(typesystem_file, file)
-        df = extract_infos(cas, mapping_dict)
+        sentence_df = get_sentences(cas)
+        df = extract_infos(cas, mapping_dict, sentence_df)
         df2tsv(df, basename, output_folder)
     
 
