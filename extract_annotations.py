@@ -12,6 +12,7 @@ import pandas as pd
 import glob
 import os
 from os.path import join
+import re
 
 # =======================
 # Files and folders
@@ -89,7 +90,10 @@ def get_snippet(sentence_df, prop):
             while annot_end > sentence_df['end'][ind_sent]:
                 snippet = snippet + " " + sentence_df['text'][ind_sent]
                 ind_sent += 1
-                
+            snippet = snippet + " " + sentence_df['text'][ind_sent + 1]
+    
+    snippet = re.sub('\r', '', snippet)
+    snippet = re.sub('\n', ' ', snippet)
     return snippet
                 
         
