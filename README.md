@@ -2,7 +2,7 @@
 
 ## About
 
-This repository contains the scripts and files for extracting the thematic statements from the scholarly literature texts annotated in INCEpTION.
+This repository contains the scripts for extracting the thematic statements from the scholarly literature texts annotated in INCEpTION.
 
 ## Prerequisites
 
