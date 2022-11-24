@@ -2,6 +2,9 @@
 Script for extracting thematic annotations on secondary literature texts
 from INCEpTION with the purpose of transferring them into statements
 and feeding into MimoTextBase.
+Input: XMI files (export from INCEpTION)
+Output: two TSV files with statements: where ending "_drop" 
+contains statements that don't belong to the MiMoText domain.
 '''
 
 # =======================
